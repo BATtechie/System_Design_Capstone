@@ -7,7 +7,7 @@
     "jsx": "react-jsx",
     "moduleResolution": "node",
     "isolatedModules": true,
-    "allowSyntheticDominanceRelations": true,
+    // "allowSyntheticDominanceRelations": true,
     "rootDir": "./", 
     "outDir": "./dist"
   }

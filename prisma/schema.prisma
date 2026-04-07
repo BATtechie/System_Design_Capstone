@@ -1,15 +1,25 @@
-// prisma/schema.prisma
-
 generator client {
-  provider = "client-js"
+  provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "postgresql"
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String // Store hashed password here!
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  createdAt     DateTime       @default(now())
+  name          String?
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }

@@ -1,39 +1,94 @@
-// frontend/src/App.tsx
+// import { BrowserRouter, Routes, Route } from "react-router-dom";
+// import Login from "./pages/Login";
+// import Dashboard from "./pages/Dashboard";
+// // Assuming this is where the 404 error logic lives
+// import NotFoundPage from "./components/NotFoundPage.tsx";
+// import ProtectedLayout from "./components/ProtectedLayout.tsx"; // NEW: Wrapper component
 
-import { useState, useEffect } from 'react';
+// function App() {
+//   return (
+//     <BrowserRouter>
+//       <Routes>
+//         {/* Public Routes */}
+//         <Route path="/" element={<Login />} />
 
-function App() {
-  const [backendMessage, setBackendMessage] = useState<string>('Loading...');
+//         {/* Protected Routes Grouping */}
+//         {/* By wrapping common paths in a Layout, you can apply shared elements 
+//            (like Navigation or Sidebar) to all protected routes. */}
+//         <Route element={<ProtectedLayout />}> 
+//           <Route path="/dashboard" element={<Dashboard />} />
+//           {/* Future Protected Routes go here:
+//              <Route path="/profile" element={<ProfilePage />} />
+//              <Route path="/settings" element={<SettingsPage />} />
+//           */}
+//         </Route>
 
-  useEffect(() => {
-    fetch('http://localhost:3001') // Point to your backend API
-      .then(res => res.json())
-      .then(data => setBackendMessage(`Connected to Backend: ${data.message}`))
-      .catch(() => setBackendMessage('⚠️ Could not connect to the backend service.'));
-  }, []);
+//         {/* Fallback Route (Crucial for UX) */}
+//         <Route path="*" element={<NotFoundPage />} /> 
+//       </Routes>
+//     </BrowserRouter>
+//   );
+// }
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <header className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-indigo-600">Full Stack Monorepo</h1>
-        <p className="mt-2 text-lg text-gray-500">React + Vite + Tailwind</p>
-      </header>
+// export default App;
 
-      <main className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl border border-indigo-100">
-        <h2 className="text-2xl font-semibold text-gray-700 mb-6">API Communication Test</h2>
-        
-        <div className="p-4 bg-indigo-50 border-l-4 border-indigo-400 rounded shadow-inner">
-          <p className="text-sm font-medium text-indigo-800">Backend Status:</p>
-          <p className="mt-1 text-lg font-mono tracking-tight">{backendMessage}</p>
-        </div>
+// import { BrowserRouter, Routes, Route } from "react-router-dom";
+// import Login from "./pages/Login";
+// import Dashboard from "./pages/Dashboard";
+// import Register from "./pages/Register";
 
-        <div className="mt-8 p-4 bg-green-50 border-l-4 border-green-400 rounded shadow-inner">
-            <h3 className="text-xl font-semibold text-green-700 mb-2">Database Status</h3>
-            <p className="text-sm text-green-800">Prisma is initialized. Run `npm run db:migrate` to create tables.</p>
-        </div>
-      </main>
-    </div>
-  );
+
+// function App() {
+//   return (
+//     <BrowserRouter>
+//       <Routes>
+//         <Route path="/register" element={<Register />} />
+//         <Route path="/" element={<Login />} />
+//         <Route path="/dashboard" element={<Dashboard />} />
+//       </Routes>
+//     </BrowserRouter>
+//   );
+// }
+
+// export default App;
+
+
+// <----------------------------------------------------------------------------->---------------------->
+
+
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Register from './pages/Register';
+
+/**
+ * AppRoutes: Handles the route configuration.
+ * Separated to ensure Fast Refresh compatibility (only exports components).
+ */
+const AppRoutes: React.FC = () => (
+  <Routes>
+    <Route path="/register" element={<Register />} />
+    <Route path="/" element={<Login />} />
+    <Route path="/dashboard" element={<Dashboard />} />
+  </Routes>
+);
+
+/**
+ * App: Class-based component for application root.
+ * Manages the BrowserRouter and route structure.
+ */
+class App extends React.Component {
+  /**
+   * Renders the application with routing configuration.
+   */
+  render(): React.ReactNode {
+    return (
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    );
+  }
 }
 
 export default App;
