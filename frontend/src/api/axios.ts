@@ -69,7 +69,14 @@ type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 export class ApiClient {
     private readonly axiosInstance: AxiosInstance;
     // Using 'this' to manage the state of the initialized HTTP client.
-    private static baseUrl: string = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+    private static readonly baseUrl: string = ApiClient.normalizeBaseUrl(
+        import.meta.env.VITE_API_URL || "http://localhost:3000"
+    );
+
+    private static normalizeBaseUrl(url: string): string {
+        const cleaned = url.replace(/\/+$/, "");
+        return cleaned.endsWith("/api") ? cleaned : `${cleaned}/api`;
+    }
 
     /**
      * Initializes the API Client and sets up interceptors for authentication flows.
