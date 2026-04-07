@@ -61,6 +61,7 @@ import axios from "axios";
 import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from "axios";
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+type FallbackRequestConfig = RetryableRequestConfig & { _fallbackTried?: boolean };
 
 /**
  * Manages all API client interactions, encapsulating token management,
@@ -69,9 +70,12 @@ type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 export class ApiClient {
     private readonly axiosInstance: AxiosInstance;
     // Using 'this' to manage the state of the initialized HTTP client.
-    private static readonly baseUrl: string = ApiClient.normalizeBaseUrl(
+    private static readonly primaryBaseUrl: string = ApiClient.normalizeBaseUrl(
         import.meta.env.VITE_API_URL || "http://localhost:3000"
     );
+    private static readonly localhostBaseUrl: string = "http://localhost:3000/api";
+    private readonly baseUrls: string[];
+    private activeBaseUrl: string;
 
     private static normalizeBaseUrl(url: string): string {
         const cleaned = url.replace(/\/+$/, "");
@@ -82,8 +86,15 @@ export class ApiClient {
      * Initializes the API Client and sets up interceptors for authentication flows.
      */
     constructor() {
+        this.baseUrls = ApiClient.primaryBaseUrl === ApiClient.localhostBaseUrl
+            ? [ApiClient.primaryBaseUrl]
+            : [ApiClient.primaryBaseUrl, ApiClient.localhostBaseUrl];
+        this.activeBaseUrl = this.baseUrls[0];
+
+        console.log("[API] Candidate base URLs:", this.baseUrls);
+
         this.axiosInstance = axios.create({
-            baseURL: ApiClient.baseUrl,
+            baseURL: this.activeBaseUrl,
             withCredentials: true,
         });
 
@@ -100,15 +111,27 @@ export class ApiClient {
     private setupRequestInterceptor(): void {
         this.axiosInstance.interceptors.request.use(
             (config) => {
+                config.baseURL = this.activeBaseUrl;
+
                 const token = localStorage.getItem("accessToken");
                 if (token) {
                     const headers = config.headers as Record<string, string>;
                     headers.Authorization = `Bearer ${token}`;
                 }
+
+                console.log("[API] Request:", {
+                    method: config.method?.toUpperCase(),
+                    url: `${config.baseURL ?? ""}${config.url ?? ""}`,
+                });
                 return config;
             },
             (error) => Promise.reject(error)
         );
+    }
+
+    private getFallbackBaseUrl(current: string): string | null {
+        const fallback = this.baseUrls.find((url) => url !== current);
+        return fallback ?? null;
     }
 
     /**
@@ -119,7 +142,23 @@ export class ApiClient {
         this.axiosInstance.interceptors.response.use(
             (response) => response, // Successful response passes through.
             async (error: AxiosError) => {
-                const originalRequest = error.config as RetryableRequestConfig | undefined;
+                const originalRequest = error.config as FallbackRequestConfig | undefined;
+
+                // Fallback behavior for network/unreachable API errors.
+                // If primary URL is down, retry once on localhost URL.
+                if (originalRequest && !error.response && !originalRequest._fallbackTried) {
+                    const currentBase = originalRequest.baseURL || this.activeBaseUrl;
+                    const fallbackBase = this.getFallbackBaseUrl(currentBase);
+
+                    if (fallbackBase) {
+                        originalRequest._fallbackTried = true;
+                        this.activeBaseUrl = fallbackBase;
+                        originalRequest.baseURL = fallbackBase;
+
+                        console.warn("[API] Primary API unreachable. Retrying with fallback:", fallbackBase);
+                        return this.axiosInstance(originalRequest);
+                    }
+                }
 
                 // Condition 1: Must be a 401 AND we must not have already attempted refresh for this request.
                 if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
