@@ -13,11 +13,20 @@ const setupApp = (): Application => {
   // ✅ Middleware
 
   app.use(cors({
-  origin: "http://localhost:5173", 
-  credentials: true,            
-}));
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5175",
+    ],
+    credentials: true,
+  }));
   app.use(express.json());
   app.use(cookieParser()); // ✅ MUST be before routes
+
+  // ✅ Root route so browser visits to http://localhost:3000/ don't show "Cannot GET /"
+  app.get("/", (req, res) => {
+    res.send("Backend is running ✅ Visit /api/auth/ping for auth health.");
+  });
 
   // ✅ Debug
   app.get("/test", (req, res) => {

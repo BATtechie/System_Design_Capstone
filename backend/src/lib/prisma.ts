@@ -5,7 +5,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Client } from "pg";
 
 dotenv.config({
-path: path.resolve(__dirname, "../../../.env"),
+path: path.resolve(__dirname, "../../.env"),
 });
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -33,7 +33,7 @@ const ssl = shouldUseSsl
 if (!shouldUseSsl) {
 parsedUrl.searchParams.delete("sslmode");
 } else {
-parsedUrl.searchParams.set("sslmode", "require");
+parsedUrl.searchParams.set("sslmode", "verify-full");
 }
 
 const client = new Client({
